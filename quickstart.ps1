@@ -330,8 +330,22 @@ foreach ($candidate in @("python", "python3", "python3.13", "python3.12", "pytho
                 break
             }
         }
-    } catch {
-        # candidate not found, continue
+    }
+    catch { }
+}
+
+# If not found, try the Python Launcher (py) which is common on Windows
+if (-not $PythonCmd -and (Get-Command py -ErrorAction SilentlyContinue)) {
+    foreach ($ver in @("3.13", "3.12", "3.11")) {
+        try {
+            $val = & py -$ver -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>$null
+            if ($LASTEXITCODE -eq 0 -and $val -eq $ver) {
+                # We found a good one via py. Get the absolute path to avoid argument issues.
+                $PythonCmd = & py -$ver -c "import sys; print(sys.executable)" 2>$null
+                break
+            }
+        }
+        catch {}
     }
 }
 
